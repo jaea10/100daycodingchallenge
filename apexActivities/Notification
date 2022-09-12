@@ -41,3 +41,22 @@ global class CaseUpdateBatch implements Database.Batchable<sObject>, Schedulable
         Database.executeBatch(cub);
     }
 }
+
+/*	List<Messaging.SingleEmailMessage> emailList = new List<Messaging.SingleEmailMessage>();
+        EmailTemplate emailTemp = [SELECT id, Subject, Body 
+                                   FROM EmailTemplate 
+                                   WHERE DeveloperName = 'SupportEscalatedCaseNotification'];
+        Case contactCase = [SELECT Owner.Email 
+			    FROM Case 
+                            LIMIT 1];
+        
+        Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
+        mail.setTemplateId(emailTemp.Id);
+        mail.setTargetObjectId(contactCase.Id);
+        emailList.add(mail);
+        
+        if(!emailList.isEmpty()){
+            Messaging.sendEmail(emailList);
+        }   
+
+*/
