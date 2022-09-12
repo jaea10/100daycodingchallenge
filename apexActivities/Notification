@@ -1,0 +1,43 @@
+/*Send email notification when case has been more than 24 hours and it is not 
+*'CLOSED'
+*/
+global class CaseUpdateBatch implements Database.Batchable<sObject>, Schedulable {
+	
+    global Database.QueryLocator start (Database.BatchableContext bc) {
+        //Create a bulkify list of records and load it to a query locator
+        //Batches of 200 are choosen by defult
+        return Database.getQueryLocator([SELECT CaseNumber,Id,Origin,Status,Owner.Email 
+										 FROM Case 
+                                         WHERE Status != 'Closed' 
+                                         AND CreatedDate >= LAST_N_DAYS:1]);
+    }
+    
+    global void execute (Database.BatchableContext bc, List<Case> caseList) {
+        //ForEach case on the list with 'New' status send notification email
+        for (Case c : caseList) {
+            String oid = c.ownerId;
+            String caseId = c.CaseNumber;
+            if (c.status != 'Closed') {
+                //Note on the account
+                c.Comments = 'Case need attention';
+            }
+        }
+        update caseList;
+    }
+    
+    global void finish (Database.BatchableContext bc) {
+        // Create email notification for completion of Batch Job
+        Messaging.SingleEmailMessage mail = new Messaging.SingleEmailMessage();
+        String[] toAddress = new String[]{'enteremailaddress@mail.com'};
+        mail.setToAddresses(toAddress);
+        mail.setSubject('Batch Job Completed');
+        mail.setPlainTextBody('Hello, The last batch job to update on open cases has been successfully completed');
+        Messaging.sendEmail(new Messaging.SingleEmailMessage[]{mail});
+    }
+    
+    global void execute(SchedulableContext sc) {
+        //Code to execute batch job
+        CaseUpdateBatch cub = new CaseUpdateBatch();
+        Database.executeBatch(cub);
+    }
+}
